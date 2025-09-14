@@ -9,6 +9,8 @@ import 'package:chat_app/logic/cubits/chat/chat_state.dart';
 import 'package:chat_app/presentation/widgets/loading_dots.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 
+import '../widgets/date_header.dart';
+
 class ChatMessageScreen extends StatefulWidget {
   final String receiverId;
   final String receiverName;
@@ -220,7 +222,7 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
               if (state.amIBlocked)
                 Container(
                   padding: const EdgeInsets.all(8),
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   child: Text(
                     "You have been blocked by ${widget.receiverName}",
                     textAlign: TextAlign.center,
@@ -229,6 +231,20 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                     ),
                   ),
                 ),
+              // Expanded(
+              //   child: ListView.builder(
+              //     controller: _scrollController,
+              //     reverse: true,
+              //     itemCount: state.messages.length,
+              //     itemBuilder: (context, index) {
+              //       final message = state.messages[index];
+              //
+              //       final isMe = message.senderId == _chatCubit.currentUserId;
+              //       return MessageBubble(message: message, isMe: isMe);
+              //     },
+              //   ),
+              // ),
+
               Expanded(
                 child: ListView.builder(
                   controller: _scrollController,
@@ -236,12 +252,37 @@ class _ChatMessageScreenState extends State<ChatMessageScreen> {
                   itemCount: state.messages.length,
                   itemBuilder: (context, index) {
                     final message = state.messages[index];
-
                     final isMe = message.senderId == _chatCubit.currentUserId;
-                    return MessageBubble(message: message, isMe: isMe);
+
+                    // Insert date header logic
+                    bool showHeader = false;
+                    final messageDate = message.timestamp.toDate();
+                    final msgDay = DateTime(messageDate.year, messageDate.month, messageDate.day);
+
+                    if (index == state.messages.length - 1) {
+                      // First (oldest) message → always show header
+                      showHeader = true;
+                    } else {
+                      final prevMessage = state.messages[index + 1];
+                      final prevDate = prevMessage.timestamp.toDate();
+                      final prevDay = DateTime(prevDate.year, prevDate.month, prevDate.day);
+
+                      if (msgDay != prevDay) {
+                        showHeader = true;
+                      }
+                    }
+
+                    return Column(
+                      children: [
+                        if (showHeader) DateHeader(date: messageDate),
+                        MessageBubble(message: message, isMe: isMe),
+                      ],
+                    );
                   },
                 ),
               ),
+
+
               if (!state.amIBlocked && !state.isUserBlocked)
                 Padding(
                   padding: const EdgeInsets.all(8),
